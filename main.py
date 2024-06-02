@@ -1,176 +1,178 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox
-from tkinter import ttk
+import sys
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QTextEdit, QFileDialog, 
+                             QMessageBox, QVBoxLayout, QHBoxLayout, QWidget, QComboBox)
 import pandas as pd
 from data_loader import DataLoader
 from data_processor import DataProcessor
 
-class DataApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Обработчик")
-        self.root.geometry("800x600")
-        self.root.configure(bg='#2f2f2f')  # Темно-серый фон
-
-        style = ttk.Style()
-        style.configure('TButton', 
-                        background='white', 
-                        foreground='black', 
-                        borderwidth=1, 
-                        relief="solid")
-        style.configure('TEntry', 
-                        fieldbackground='black', 
-                        foreground='white', 
-                        borderwidth=1, 
-                        relief="solid")
-        style.configure('TLabel', 
-                        background='#2f2f2f', 
-                        foreground='white')
-        style.configure('TOptionMenu', 
-                        background='black', 
-                        foreground='black', 
-                        borderwidth=1, 
-                        relief="solid")
+class DataApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Обработчик")
+        self.setGeometry(100, 100, 800, 600)
 
         self.data = None
         self.processed_data_x = None
         self.processed_data_y = None
 
-        self.upload_button = ttk.Button(root, text="Загрузить файл", command=self.upload_file)
-        self.upload_button.grid(row=0, column=0, columnspan=4, pady=10, padx=10)
+        main_layout = QVBoxLayout()
+        top_layout = QHBoxLayout()
+        input_layout = QVBoxLayout()
+        output_layout = QVBoxLayout()
 
-        self.data_selection = tk.StringVar(root)
-        self.data_selection.set("X1 и Y1")  # Значение по умолчанию
-        self.data_menu = ttk.OptionMenu(root, self.data_selection, "X1 и Y1", "X1 и Y1", "X2 и Y2", command=self.display_selected_data)
-        self.data_menu.grid(row=1, column=0, columnspan=4, pady=10, padx=10)
+        self.upload_button = QPushButton("Загрузить файл", self)
+        self.upload_button.clicked.connect(self.upload_file)
+        top_layout.addWidget(self.upload_button)
 
-        self.coefficient_1_label = ttk.Label(root, text="Коэффициент 1:")
-        self.coefficient_1_entry = ttk.Entry(root)
+        self.data_selection = QComboBox(self)
+        self.data_selection.addItems(["X1 и Y1", "X2 и Y2"])
+        self.data_selection.currentTextChanged.connect(self.display_selected_data)
+        top_layout.addWidget(self.data_selection)
 
-        self.coefficient_2_label = ttk.Label(root, text="Коэффициент 2:")
-        self.coefficient_2_entry = ttk.Entry(root)
+        main_layout.addLayout(top_layout)
 
-        self.lambda_0_label = ttk.Label(root, text="lambda_0:")
-        self.lambda_0_entry = ttk.Entry(root)
+        self.coefficient_1_label = QLabel("Коэффициент 1:", self)
+        input_layout.addWidget(self.coefficient_1_label)
+        self.coefficient_1_entry = QLineEdit(self)
+        input_layout.addWidget(self.coefficient_1_entry)
 
-        self.temp_T_label = ttk.Label(root, text="temp_T:")
-        self.temp_T_entry = ttk.Entry(root)
+        self.coefficient_2_label = QLabel("Коэффициент 2:", self)
+        input_layout.addWidget(self.coefficient_2_label)
+        self.coefficient_2_entry = QLineEdit(self)
+        input_layout.addWidget(self.coefficient_2_entry)
 
-        self.process_button = ttk.Button(root, text="Обработать данные", command=self.process_data)
+        self.lambda_0_label = QLabel("lambda_0:", self)
+        self.lambda_0_entry = QLineEdit(self)
+        self.temp_T_label = QLabel("temp_T:", self)
+        self.temp_T_entry = QLineEdit(self)
 
-        self.output_text = tk.Text(root, height=20, width=100, bg='black', fg='white', wrap='none')
+        input_layout.addWidget(self.lambda_0_label)
+        input_layout.addWidget(self.lambda_0_entry)
+        input_layout.addWidget(self.temp_T_label)
+        input_layout.addWidget(self.temp_T_entry)
 
-        self.save_button = ttk.Button(root, text="Сохранить в Excel", command=self.save_to_excel)
+        self.lambda_0_label.hide()
+        self.lambda_0_entry.hide()
+        self.temp_T_label.hide()
+        self.temp_T_entry.hide()
 
-        self.show_or_hide_widgets()
+        self.process_button = QPushButton("Обработать данные", self)
+        self.process_button.clicked.connect(self.process_data)
+        output_layout.addWidget(self.process_button)
+
+        self.output_text = QTextEdit(self)
+        output_layout.addWidget(self.output_text)
+
+        self.save_button = QPushButton("Сохранить в Excel", self)
+        self.save_button.clicked.connect(self.save_to_excel)
+        output_layout.addWidget(self.save_button)
+
+        main_layout.addLayout(input_layout)
+        main_layout.addLayout(output_layout)
+
+        container = QWidget()
+        container.setLayout(main_layout)
+        self.setCentralWidget(container)
 
     def upload_file(self):
-        file_path = filedialog.askopenfilename()
+        file_path, _ = QFileDialog.getOpenFileName(self, "Загрузить файл", "", "All Files (*)")
         if file_path:
             loader = DataLoader(file_path)
             self.data = loader.load_data()
-            messagebox.showinfo("Загрузка файла", "Файл успешно загружен")
+            QMessageBox.information(self, "Загрузка файла", "Файл успешно загружен")
 
     def display_selected_data(self, selected):
         if not self.data:
-            messagebox.showerror("Ошибка", "Сначала загрузите файл")
+            QMessageBox.critical(self, "Ошибка", "Сначала загрузите файл")
             return
 
-        self.output_text.delete('1.0', tk.END)
-        selected_data = self.data_selection.get()
+        self.output_text.clear()
+        selected_data = self.data_selection.currentText()
+
         if selected_data == "X1 и Y1":
             data_x = self.data[0]
-            data_y = self.data[1]
-        elif selected_data == "X2 и Y2":
+            for x in data_x:
+                self.output_text.append(f"{x}")
+
+            self.lambda_0_label.hide()
+            self.lambda_0_entry.hide()
+            self.temp_T_label.hide()
+            self.temp_T_entry.hide()
+        else:
             data_x = self.data[2]
             data_y = self.data[3]
+            for x, y in zip(data_x, data_y):
+                self.output_text.append(f"{x}\t\t{y}")
 
-        for x, y in zip(data_x, data_y):
-            self.output_text.insert(tk.END, f"{x}\t\t{y}\n")
-
-        self.show_or_hide_widgets()
-
-    def show_or_hide_widgets(self):
-        if self.data_selection.get() == "X1 и Y1":
-            self.coefficient_1_label.grid(row=2, column=0, pady=10, padx=10, sticky='e')
-            self.coefficient_1_entry.grid(row=2, column=1, pady=10, padx=10, sticky='w')
-            self.coefficient_2_label.grid(row=3, column=0, pady=10, padx=10, sticky='e')
-            self.coefficient_2_entry.grid(row=3, column=1, pady=10, padx=10, sticky='w')
-            self.lambda_0_label.grid_remove()
-            self.lambda_0_entry.grid_remove()
-            self.temp_T_label.grid_remove()
-            self.temp_T_entry.grid_remove()
-            self.process_button.grid(row=4, column=0, columnspan=4, pady=10, padx=10)
-            self.output_text.grid(row=5, column=0, columnspan=4, pady=10, padx=10)
-            self.save_button.grid(row=6, column=0, columnspan=4, pady=10, padx=10)
-        else:
-            self.coefficient_1_label.grid(row=2, column=0, pady=10, padx=10, sticky='e')
-            self.coefficient_1_entry.grid(row=2, column=1, pady=10, padx=10, sticky='w')
-            self.coefficient_2_label.grid(row=3, column=0, pady=10, padx=10, sticky='e')
-            self.coefficient_2_entry.grid(row=3, column=1, pady=10, padx=10, sticky='w')
-            self.lambda_0_label.grid(row=2, column=2, pady=10, padx=10, sticky='e')
-            self.lambda_0_entry.grid(row=2, column=3, pady=10, padx=10, sticky='w')
-            self.temp_T_label.grid(row=3, column=2, pady=10, padx=10, sticky='e')
-            self.temp_T_entry.grid(row=3, column=3, pady=10, padx=10, sticky='w')
-            self.process_button.grid(row=4, column=0, columnspan=4, pady=10, padx=10)
-            self.output_text.grid(row=5, column=0, columnspan=4, pady=10, padx=10)
-            self.save_button.grid(row=6, column=0, columnspan=4, pady=10, padx=10)
+            self.lambda_0_label.show()
+            self.lambda_0_entry.show()
+            self.temp_T_label.show()
+            self.temp_T_entry.show()
 
     def process_data(self):
         if not self.data:
-            messagebox.showerror("Ошибка", "Сначала загрузите файл")
+            QMessageBox.critical(self, "Ошибка", "Сначала загрузите файл")
             return
 
-        selected_data = self.data_selection.get()
-        if selected_data == "X1 и Y1":
-            data_x = self.data[0]
-            data_y = self.data[1]
-        elif selected_data == "X2 и Y2":
-            data_x = self.data[2]
-            data_y = self.data[3]
+        self.output_text.clear()  # Clear old data before processing new data
 
+        selected_data = self.data_selection.currentText()
         try:
-            coefficient_1 = float(self.coefficient_1_entry.get())
-            coefficient_2 = float(self.coefficient_2_entry.get())
-            lambda_0 = float(self.lambda_0_entry.get())*10**(-9)
-            temp_T = float(self.temp_T_entry.get())
+            coefficient_1 = float(self.coefficient_1_entry.text())
+            coefficient_2 = float(self.coefficient_2_entry.text())
+            if selected_data == "X1 и Y1":
+                data_x = self.data[0]
+                processor = DataProcessor(data_x, coefficient_1=coefficient_1, coefficient_2=coefficient_2)
+                self.processed_data_x = processor.process_x1()
+                self.processed_data_y = None
+            else:
+                data_x = self.data[2]
+                data_y = self.data[3]
+                lambda_0 = float(self.lambda_0_entry.text()) * 10 ** (-9)
+                temp_T = float(self.temp_T_entry.text())
+                processor = DataProcessor(data_x, data_y, coefficient_1, coefficient_2, lambda_0, temp_T)
+                self.processed_data_x, self.processed_data_y = processor.process_x2_y2()
         except ValueError:
-            messagebox.showerror("Ошибка", "Введите корректные значения для коэффициентов")
+            QMessageBox.critical(self, "Ошибка", "Введите корректные значения для коэффициентов")
             return
 
-        processor = DataProcessor(data_x, data_y, coefficient_1, coefficient_2, lambda_0, temp_T)
-        self.processed_data_x, self.processed_data_y = processor.process_data()
-
-        self.output_text.delete('1.0', tk.END)
-        for x, y, new_x, new_y in zip(data_x, data_y, self.processed_data_x, self.processed_data_y):
-            self.output_text.insert(tk.END, f"{x}\t\t{y}\t\t{new_x}\t\t{new_y}\n")
+        self.output_text.clear()
+        if selected_data == "X1 и Y1":
+            for x, new_x in zip(data_x, self.processed_data_x):
+                self.output_text.append(f"{x}\t\t{new_x}")
+        else:
+            for x, y, new_x, new_y in zip(data_x, data_y, self.processed_data_x, self.processed_data_y):
+                self.output_text.append(f"{x}\t\t{y}\t\t{new_x}\t\t{new_y}")
 
     def save_to_excel(self):
-        if not self.processed_data_x or not self.processed_data_y:
-            messagebox.showerror("Ошибка", "Сначала обработайте данные")
+        if not self.processed_data_x:
+            QMessageBox.critical(self, "Ошибка", "Сначала обработайте данные")
             return
 
-        selected_data = self.data_selection.get()
+        selected_data = self.data_selection.currentText()
         if selected_data == "X1 и Y1":
             original_data_x = self.data[0]
-            original_data_y = self.data[1]
-        elif selected_data == "X2 и Y2":
+            df = pd.DataFrame({
+                'Original X': original_data_x,
+                'Processed X': self.processed_data_x
+            })
+        else:
             original_data_x = self.data[2]
             original_data_y = self.data[3]
+            df = pd.DataFrame({
+                'Original X': original_data_x,
+                'Original Y': original_data_y,
+                'Processed X': self.processed_data_x,
+                'Processed Y': self.processed_data_y
+            })
 
-        df = pd.DataFrame({
-            'Original X': original_data_x,
-            'Original Y': original_data_y,
-            'Processed X': self.processed_data_x,
-            'Processed Y': self.processed_data_y
-        })
-
-        file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+        file_path, _ = QFileDialog.getSaveFileName(self, "Сохранить в Excel", "", "Excel files (*.xlsx)")
         if file_path:
             df.to_excel(file_path, index=False)
-            messagebox.showinfo("Сохранение файла", "Файл успешно сохранен")
+            QMessageBox.information(self, "Сохранение файла", "Файл успешно сохранен")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = DataApp(root)
-    root.mainloop()
+    app = QApplication(sys.argv)
+    window = DataApp()
+    window.show()
+    sys.exit(app.exec_())
