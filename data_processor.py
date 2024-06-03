@@ -39,7 +39,7 @@ class DataProcessor:
                 new_x = x * (x * self.coefficient_1 + self.coefficient_2)
                 v_j = (new_x * c) / (2 * pi)
                 new_y = ((2**4) * (pi**4) / 45 * ((v_0 - v_j)**4 / (1 - math.exp((-h * c * v_j) / (k * self.temp_T)))) 
-                         * h / (8 * (pi**4) * c * v_j) * y)
+                         * h / (8 * (pi**4) * c * v_j) * y*10**(-6))
                 processed_data_x.append(new_x)
                 processed_data_y.append(new_y)
             except ValueError:
