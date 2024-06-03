@@ -11,7 +11,7 @@ class DataApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Обработчик")
-        self.setGeometry(100, 100, 900, 600)
+        self.setGeometry(100, 100, 1200, 600)
         
         self.setStyleSheet("background-color: #EAEAFC;")  # Задний фон светло-голубого цвета
 
