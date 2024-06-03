@@ -1,11 +1,9 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QTextEdit, QFileDialog, 
                              QMessageBox, QVBoxLayout, QHBoxLayout, QWidget, QSpacerItem, QSizePolicy)
-
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
-
 from data_loader import DataLoader
 from data_processor import DataProcessor
 
@@ -49,6 +47,7 @@ class DataApp(QMainWindow):
         self.coefficient_1_label.setStyleSheet("color: black;")
         input_layout.addWidget(self.coefficient_1_label)
         self.coefficient_1_entry = QLineEdit(self)
+        self.coefficient_1_entry.setText("0.0000083526")  # Установить начальное значение
         self.coefficient_1_entry.setStyleSheet(self.get_line_edit_style())
         input_layout.addWidget(self.coefficient_1_entry)
 
@@ -56,16 +55,19 @@ class DataApp(QMainWindow):
         self.coefficient_2_label.setStyleSheet("color: black;")
         input_layout.addWidget(self.coefficient_2_label)
         self.coefficient_2_entry = QLineEdit(self)
+        self.coefficient_2_entry.setText("0.98")  # Установить начальное значение
         self.coefficient_2_entry.setStyleSheet(self.get_line_edit_style())
         input_layout.addWidget(self.coefficient_2_entry)
 
         self.lambda_0_label = QLabel("Длина волны:", self)
         self.lambda_0_label.setStyleSheet("color: black;")
         self.lambda_0_entry = QLineEdit(self)
+        self.lambda_0_entry.setText("532")  # Установить начальное значение
         self.lambda_0_entry.setStyleSheet(self.get_line_edit_style())
         self.temp_T_label = QLabel("Температура:", self)
         self.temp_T_label.setStyleSheet("color: black;")
         self.temp_T_entry = QLineEdit(self)
+        self.temp_T_entry.setText("273")  # Установить начальное значение
         self.temp_T_entry.setStyleSheet(self.get_line_edit_style())
 
         input_layout.addWidget(self.lambda_0_label)
@@ -199,6 +201,8 @@ class DataApp(QMainWindow):
             if self.button_x1_y1.isChecked():
                 df = pd.DataFrame({
                     "X": self.data[0],
+                    "Y": self.data[1],
+                    
                     "Корректированная X": self.processed_data_x
                 })
                 coefficients = pd.DataFrame({
@@ -222,9 +226,13 @@ class DataApp(QMainWindow):
             with pd.ExcelWriter(file_path) as writer:
                 df.to_excel(writer, sheet_name='Processed Data', index=False)
                 coefficients.to_excel(writer, sheet_name='Coefficients', index=False)
+                if self.button_x2_y2.isChecked():  # Добавить массив Y1
+                    pd.DataFrame({"Y1": self.data[3]}).to_excel(writer, sheet_name='Original Y1', index=False)
 
             self.adjust_column_widths(file_path, 'Processed Data')
             self.adjust_column_widths(file_path, 'Coefficients')
+            if self.button_x2_y2.isChecked():
+                self.adjust_column_widths(file_path, 'Original Y1')
 
             QMessageBox.information(self, "Сохранение файла", "Файл успешно сохранен")
 
